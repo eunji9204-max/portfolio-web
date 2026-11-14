@@ -831,9 +831,9 @@ function Stage({ mouse, night }) {
         }}
       >
         {/* 배경: 살짝 확대해 두고 마우스 반대 방향으로 이동 (가장자리 노출 방지) */}
-        {/* 등장: 로더와 같은 색에서 살짝 줌아웃하며 드러남 */}
+        {/* 등장: 로더와 같은 색에서 살짝 줌아웃하며 드러남. 모바일은 이미지 대신 그라데이션(Home 배경) */}
         <motion.div
-          className="absolute inset-0"
+          className="absolute inset-0 hidden md:block"
           initial={{ opacity: 0, scale: 1.08 }}
           animate={loaded ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.08 }}
           transition={{ duration: 1.4, ease: EASE_OUT }}
@@ -841,6 +841,7 @@ function Stage({ mouse, night }) {
           <motion.img
             src={`${import.meta.env.BASE_URL}assets/bg.png`}
             alt=""
+            loading="lazy"
             className="absolute inset-0 h-full w-full scale-[1.06] object-cover"
             style={{ x: bgX, y: bgY }}
           />
@@ -848,6 +849,7 @@ function Stage({ mouse, night }) {
           <motion.img
             src={`${import.meta.env.BASE_URL}assets/bg-night.png`}
             alt=""
+            loading="lazy"
             // 밤 이미지는 더 가로로 길어서(1.95:1) 받침대가 오른쪽에 그려짐 → 크롭 위치로 낮 배경에 맞춤
             className="absolute inset-0 h-full w-full scale-[1.06] object-cover object-[70.4%_50%]"
             style={{ x: bgX, y: bgY }}
@@ -1023,7 +1025,7 @@ function Home({ mouse }) {
   return (
     <div
       data-theme={night ? "night" : undefined}
-      className="relative min-h-screen overflow-hidden bg-[#dfe6fb] transition-colors duration-700 night:bg-[#030a26] [container-type:inline-size] lg:h-screen lg:min-h-[820px] lg:[container-type:size]">
+      className="relative min-h-screen overflow-hidden bg-[#dfe6fb] transition-colors duration-700 night:bg-[#030a26] max-md:bg-[radial-gradient(120%_55%_at_90%_8%,#ffffff_0%,transparent_60%),radial-gradient(90%_50%_at_0%_100%,#c7d3ff_0%,transparent_70%),linear-gradient(180deg,#eaf0ff_0%,#dbe4fd_50%,#c9d5fb_100%)] night:max-md:bg-[radial-gradient(120%_55%_at_90%_8%,rgba(90,120,255,0.38)_0%,transparent_60%),radial-gradient(90%_50%_at_0%_100%,rgba(70,60,200,0.28)_0%,transparent_70%),linear-gradient(180deg,#0b1546_0%,#060d33_50%,#020617_100%)] [container-type:inline-size] lg:h-screen lg:min-h-[820px] lg:[container-type:size]">
       {/* 배경 + 중앙 3D 장면 */}
       <Stage mouse={mouse} night={night} />
 
