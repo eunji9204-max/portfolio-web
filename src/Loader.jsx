@@ -57,7 +57,7 @@ export default function Loader() {
           >
             {/* 둥둥 떠 있는 우주인 */}
             <motion.img
-              src="/assets/loader-astronaut.png"
+              src={`${import.meta.env.BASE_URL}assets/loader-astronaut.png`}
               alt=""
               draggable={false}
               className="w-[72px] select-none drop-shadow-[0_14px_18px_rgba(36,71,255,0.22)]"

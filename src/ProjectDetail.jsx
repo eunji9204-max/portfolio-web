@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
+  useInView,
   useMotionValue,
   useReducedMotion,
   useScroll,
@@ -14,6 +15,8 @@ import {
   ArrowUpRight,
   Check,
   Copy,
+  Eye,
+  EyeOff,
   Layers,
   Lightbulb,
   MousePointerClick,
@@ -62,14 +65,17 @@ function SectionHead({ no, en, ko, desc }) {
 /* 1. 웹시안                                                           */
 /* ------------------------------------------------------------------ */
 
-function Hotspot({ h, i }) {
+function Hotspot({ h, i, reduce }) {
   const [open, setOpen] = useState(false);
   const right = h.x > 60;
   const below = h.y < 70;
   return (
-    <div
+    <motion.div
       className="absolute z-10"
       style={{ left: `${h.x}%`, top: `${h.y}%` }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.4 }}
+      animate={{ opacity: 1, scale: 1, transition: { type: "spring", stiffness: 420, damping: 22, delay: reduce ? 0 : i * 0.08 } }}
+      exit={{ opacity: 0, scale: reduce ? 1 : 0.4, transition: { duration: 0.18, ease: EASE, delay: reduce ? 0 : i * 0.03 } }}
       onPointerEnter={() => setOpen(true)}
       onPointerLeave={() => setOpen(false)}
     >
@@ -96,7 +102,7 @@ function Hotspot({ h, i }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
@@ -116,6 +122,12 @@ function WebMockup({ d }) {
   const my = useMotionValue(0);
   const tiltY = useSpring(useTransform(mx, (v) => v * 6), { stiffness: 120, damping: 18 });
   const tiltX = useSpring(useTransform(my, (v) => v * -4), { stiffness: 120, damping: 18 });
+
+  // 번호 표시: 화면이 충분히 세워진 뒤 순서대로 등장, 토글로 숨기기/보기
+  const screenRef = useRef(null);
+  const inView = useInView(screenRef, { root, once: true, amount: 0.6 });
+  const [showPins, setShowPins] = useState(true);
+  const pinsVisible = inView && showPins;
 
   return (
     <div
@@ -149,18 +161,38 @@ function WebMockup({ d }) {
             </div>
             <span className="w-[54px]" />
           </div>
-          <div className="relative">
+          <div ref={screenRef} className="relative">
             <img src={d.image} alt={`${d.title.join(" ")} 메인 화면 시안`} className="block w-full" />
-            {d.hotspots.map((h, i) => (
-              <Hotspot key={h.title} h={h} i={i} />
-            ))}
+            <AnimatePresence>
+              {pinsVisible && d.hotspots.map((h, i) => <Hotspot key={h.title} h={h} i={i} reduce={reduce} />)}
+            </AnimatePresence>
           </div>
         </motion.div>
       </motion.div>
-      <p className="mt-5 flex items-center justify-center gap-2 text-[13px] text-ink-soft">
-        <MousePointerClick className="size-4 text-[var(--p)]" />
-        번호에 마우스를 올려 주요 기능을 확인해 보세요
-      </p>
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] text-ink-soft">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p
+            key={showPins ? "on" : "off"}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: EASE }}
+            className="flex items-center gap-2"
+          >
+            <MousePointerClick className="size-4 text-[var(--p)]" />
+            {showPins ? "번호에 마우스를 올려 주요 기능을 확인해 보세요" : "번호를 숨겨 디자인 전체를 볼 수 있어요"}
+          </motion.p>
+        </AnimatePresence>
+        <button
+          type="button"
+          onClick={() => setShowPins((v) => !v)}
+          aria-pressed={showPins}
+          className="glass inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold text-ink transition-all hover:-translate-y-0.5 hover:bg-white/70 active:scale-[0.97]"
+        >
+          {showPins ? <EyeOff className="size-3.5 text-[var(--p)]" /> : <Eye className="size-3.5 text-[var(--p)]" />}
+          {showPins ? "번호 숨기기" : "번호 보기"}
+        </button>
+      </div>
     </div>
   );
 }

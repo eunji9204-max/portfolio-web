@@ -38,7 +38,7 @@ export const PROJECT_DETAILS = {
     title: ["차세대", "통합포털시스템"],
     lead:
       "더 스마트한 업무 환경을 위한 통합 포털 서비스. 근태·일정·결재·공지와 AI 요약을 하나의 대시보드로 통합해, 임직원의 하루를 한 화면에서 시작하도록 설계했습니다.",
-    image: "/assets/project-portal.jpg",
+    image: `${import.meta.env.BASE_URL}assets/project-portal.jpg`,
     theme: { p: "#20898F", deep: "#17707A", bright: "#25989F", tint: "#E3F3F2" },
     heroGradient: "linear-gradient(135deg,#17707A,#25989F 55%,#6CC0C3)",
     heroCopy: { label: "MAIN DASHBOARD", text: ["하루를 여는", "하나의 화면"] },
@@ -132,7 +132,7 @@ export const PROJECT_DETAILS = {
     title: ["LMO", "정보시스템"],
     lead:
       "안전한 바이오, 더 나은 미래를 위한 LMO 통합 플랫폼. 신고·점검·교육 등 흩어진 LMO 안전관리 서비스를 하나의 포털로 모아, 연구자와 기관 담당자가 필요한 정보에 빠르게 닿도록 설계했습니다.",
-    image: "/assets/project-lmo.jpg",
+    image: `${import.meta.env.BASE_URL}assets/project-lmo.jpg`,
     theme: { p: "#1658CF", deep: "#0F3E9C", bright: "#3268E4", tint: "#E9EFFB" },
     heroGradient: "linear-gradient(135deg,#0F3E9C,#1658CF 50%,#7FA5EE)",
     heroCopy: { label: "MAIN PAGE", text: ["안전한 연구를", "위한 첫 화면"] },
@@ -227,7 +227,7 @@ export const PROJECT_DETAILS = {
     title: ["탄소관리 · 거래", "플랫폼"],
     lead:
       "지속 가능한 탄소중립을 위한 통합 관리 시스템. 에너지 소비·공급, 온실가스 배출량, 발전량 데이터를 하나의 대시보드에서 실시간으로 확인하고 관리하도록 설계했습니다.",
-    image: "/assets/project-carbon.png",
+    image: `${import.meta.env.BASE_URL}assets/project-carbon.png`,
     theme: { p: "#00589D", deep: "#003F73", bright: "#24AAB9", tint: "#E6F5F7" },
     heroGradient: "linear-gradient(135deg,#003F73,#00589D 45%,#24AAB9)",
     heroCopy: { label: "ENERGY DASHBOARD", text: ["숫자로 읽는", "탄소중립"] },
@@ -323,7 +323,7 @@ export const PROJECT_DETAILS = {
     title: ["제주 태양광 통합", "모니터링 플랫폼"],
     lead:
       "지속 가능한 에너지를 위한 스마트 모니터링. 제주 전역의 태양광 설비 상태와 발전량, 시장·기상 정보를 지도 기반 대시보드에서 실시간으로 확인하도록 설계했습니다.",
-    image: "/assets/project-solar.png",
+    image: `${import.meta.env.BASE_URL}assets/project-solar.png`,
     theme: { p: "#11908E", deep: "#16333C", bright: "#2FD6BC", tint: "#E3F7F4" },
     heroGradient: "linear-gradient(135deg,#0E2229,#16333C 50%,#11908E)",
     heroCopy: { label: "MONITORING DASHBOARD", text: ["제주의 햇빛을", "한눈에"] },

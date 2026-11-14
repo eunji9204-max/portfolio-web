@@ -40,7 +40,7 @@ const PROJECTS = [
     cat: "Public Service",
     title: "차세대 통합포털시스템",
     desc: "더 스마트한 업무 환경을 위한\n통합 포털 서비스",
-    thumb: "/assets/project-portal.jpg",
+    thumb: `${import.meta.env.BASE_URL}assets/project-portal.jpg`,
     slug: "portal", // 상세 페이지 연결
   },
   {
@@ -48,7 +48,7 @@ const PROJECTS = [
     cat: "Government",
     title: "LMO 정보시스템",
     desc: "안전한 바이오,\n더 나은 미래를 위한 LMO 통합 플랫폼",
-    thumb: "/assets/project-lmo.jpg",
+    thumb: `${import.meta.env.BASE_URL}assets/project-lmo.jpg`,
     slug: "lmo",
   },
   {
@@ -56,7 +56,7 @@ const PROJECTS = [
     cat: "Energy Platform",
     title: "탄소관리 · 거래 플랫폼",
     desc: "지속 가능한 탄소중립을 위한\n통합 관리 시스템",
-    thumb: "/assets/project-carbon.png",
+    thumb: `${import.meta.env.BASE_URL}assets/project-carbon.png`,
     slug: "carbon",
   },
   {
@@ -64,7 +64,7 @@ const PROJECTS = [
     cat: "Smart City",
     title: "제주 태양광 통합\n모니터링 플랫폼",
     desc: "지속 가능한 에너지를 위한\n스마트 모니터링",
-    thumb: "/assets/project-solar.png",
+    thumb: `${import.meta.env.BASE_URL}assets/project-solar.png`,
     slug: "solar",
   },
   {
@@ -292,7 +292,7 @@ function GlassTileBody({ k, rotate, delay }) {
 /* 3D 우주인                                                            */
 /* ------------------------------------------------------------------ */
 
-const MODEL_URL = "/assets/base_basic_pbr.glb";
+const MODEL_URL = `${import.meta.env.BASE_URL}assets/base_basic_pbr.glb`;
 
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -831,7 +831,7 @@ function Stage({ mouse }) {
       >
         {/* 배경: 살짝 확대해 두고 마우스 반대 방향으로 이동 (가장자리 노출 방지) */}
         <motion.img
-          src="/assets/bg.png"
+          src={`${import.meta.env.BASE_URL}assets/bg.png`}
           alt=""
           className="absolute inset-0 h-full w-full scale-[1.06] object-cover"
           style={{ x: bgX, y: bgY }}
