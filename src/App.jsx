@@ -1,8 +1,10 @@
 import { Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import ProjectDetail from "./ProjectDetail.jsx";
+import { useLoaded } from "./Loader.jsx";
 import { PROJECT_DETAILS } from "./projects.js";
 import {
   AnimatePresence,
+  MotionConfig,
   motion,
   useMotionTemplate,
   useMotionValue,
@@ -14,8 +16,12 @@ import * as THREE from "three";
 import {
   ArrowLeft,
   ArrowRight,
-  Sparkle,
   Circle,
+  Moon,
+  Sun,
+  Mail,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Float, Lightformer, useGLTF } from "@react-three/drei";
@@ -24,15 +30,9 @@ import { ContactShadows, Environment, Float, Lightformer, useGLTF } from "@react
 /* 데이터                                                              */
 /* ------------------------------------------------------------------ */
 
-const NAV = ["Portfolio", "About", "Skills", "Contact"];
+const EMAIL = "heart8520@naver.com";
 
-const TOOLS = [
-  { key: "figma", name: "Figma", desc: "UI Design" },
-  { key: "ps", name: "Photoshop", desc: "Image Editing" },
-  { key: "ai", name: "Illustrator", desc: "Graphic Design" },
-  { key: "gpt", name: "ChatGPT", desc: "AI Design" },
-  { key: "claude", name: "Claude", desc: "Research & Planning" },
-];
+const NAV = ["Portfolio", "About", "Skills", "Contact"];
 
 const PROJECTS = [
   {
@@ -161,30 +161,6 @@ function ToolIcon({ k, size = 28 }) {
   }
 }
 
-/** Adobe 마크는 size 를 공통 처리 */
-function SizedTool({ k, size = 28 }) {
-  if (k === "ps" || k === "ai") {
-    const map = { ps: ["Ps", "#001E36", "#31A8FF"], ai: ["Ai", "#330000", "#FF9A00"] };
-    const [label, bg, fg] = map[k];
-    return (
-      <span
-        className="grid place-items-center rounded-[7px] font-display font-semibold leading-none"
-        style={{
-          width: size,
-          height: size,
-          fontSize: typeof size === "number" ? size * 0.48 : `calc(${size} * 0.48)`,
-          background: bg,
-          color: fg,
-          boxShadow: `inset 0 0 0 1.5px ${fg}66`,
-        }}
-      >
-        {label}
-      </span>
-    );
-  }
-  return <ToolIcon k={k} size={size} />;
-}
-
 /* ------------------------------------------------------------------ */
 /* 3D 유리 아이콘 타일 (중앙 장면)                                      */
 /* ------------------------------------------------------------------ */
@@ -241,21 +217,25 @@ function GlassTile({ k, className, rotate = 0, delay = 0, depth = 1, mouse }) {
   );
 }
 
-function GlassTileBody({ k, rotate, delay }) {
+function GlassTileBody({ k, rotate, delay: d }) {
   const reduce = useReducedMotion();
+  const loaded = useLoaded();
+  const delay = d + 0.55; // 우주인 등장 직후 하나씩 팝
   const st = TILE_STYLES[k];
   return (
     <motion.div
       className="absolute inset-0"
       initial={{ opacity: 0, scale: 0.85, y: 20 }}
       animate={
-        reduce
+        !loaded
+          ? { opacity: 0, scale: 0.85, y: 20 }
+          : reduce
           ? { opacity: 1, scale: 1, y: 0 }
           : { opacity: 1, scale: 1, y: [0, -10, 0], rotate: [rotate, rotate + 2, rotate] }
       }
       transition={{
         opacity: { duration: 0.8, delay },
-        scale: { duration: 0.8, delay },
+        scale: { type: "spring", stiffness: 260, damping: 16, delay },
         y: { duration: 5 + delay * 2, repeat: Infinity, ease: "easeInOut", delay },
         rotate: { duration: 6 + delay * 2, repeat: Infinity, ease: "easeInOut", delay },
       }}
@@ -344,12 +324,10 @@ function AstronautModel({ interaction, mouse }) {
 /* ------------------------------------------------------------------ */
 
 // [x, y, z, radius] — 카메라 기준 월드 좌표 (화면 가로 약 ±5.6, 세로 약 ±3.15)
+// 텍스트(왼쪽)·카드(아래)를 가리지 않도록 우주인 주변에만 소수 배치
 const BUBBLES = [
-  [-5.3, 2.8, -1, 0.22], [-2.4, 2.6, 0, 0.16], [-0.9, -0.2, 0.5, 0.3],
-  [0.6, 2.9, -0.5, 0.14], [1.4, -0.9, 0.8, 0.12], [2.7, 0.4, 1.2, 0.2],
-  [3.4, 2.3, 0, 0.26], [4.3, -0.4, -0.5, 0.18], [5.2, 1.4, 0.3, 0.12],
-  [-2.2, -1.4, 0.6, 0.14], [2.2, 2.0, 1.6, 0.1], [-5.3, -2.6, 1, 0.5],
-  [4.9, -2.7, 0.5, 0.42], [0.1, 1.2, 1.8, 0.08],
+  [1.35, 2.9, -0.5, 0.14], [3.45, 0.4, 1.2, 0.2],
+  [4.15, 2.3, 0, 0.26], [0.85, 1.2, 1.8, 0.08],
 ];
 
 function Bubble({ home, r, seed }) {
@@ -438,7 +416,7 @@ function BubbleScene() {
 function CameraRig() {
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    camera.lookAt(0, 0.8, 0);
+    camera.lookAt(0, 1.155, 0); // 캔버스 위쪽 여백(점프 공간)만큼 시선을 올림
     camera.updateProjectionMatrix();
   }, [camera]);
   return null;
@@ -450,7 +428,8 @@ function AstronautScene({ interaction, mouse }) {
       frameloop={useContext(NavCtx).paused ? "never" : "always"}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true }}
-      camera={{ position: [0, 1.2, 4.6], fov: 26 }}
+      // fov 34.2 = 26°를 캔버스 높이 4/3배에 맞춘 값 (우주인 크기 유지)
+      camera={{ position: [0, 1.2, 4.6], fov: 34.2 }}
     >
       <CameraRig />
       <ambientLight intensity={1.3} />
@@ -481,47 +460,25 @@ useGLTF.preload(MODEL_URL);
 /** 로고: 궤도 심볼(유리 질감) + 워드마크. 호버 시 궤도가 돌고 위성이 한 바퀴 */
 function Logo() {
   return (
-    <a href="#" aria-label="eun 홈" className="group flex items-center gap-2.5 lg:gap-[0.6cqw]">
-      <span
-        className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-[11px] lg:size-[2.15cqw] lg:rounded-[0.65cqw]"
-        style={{
-          background: "linear-gradient(145deg, #6d8bff 0%, #2f55ff 45%, #1b2fd8 100%)",
-          boxShadow:
-            "0 8px 18px -8px rgba(36,71,255,0.7), inset 0 1px 1px rgba(255,255,255,0.65), inset 0 -4px 8px rgba(10,20,120,0.35)",
-        }}
-      >
-        {/* 유리 반사광 */}
-        <span className="pointer-events-none absolute -top-1/2 left-0 h-full w-full rotate-[-20deg] bg-gradient-to-b from-white/40 to-transparent" />
-        <svg viewBox="0 0 32 32" className="relative h-[72%] w-[72%]" aria-hidden>
-          <defs>
-            <radialGradient id="logo-planet" cx="35%" cy="30%" r="75%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#cfdcff" />
-            </radialGradient>
-          </defs>
-          {/* 행성 */}
-          <circle cx="16" cy="16" r="7" fill="url(#logo-planet)" />
-          {/* 궤도 + 위성 (호버 시 회전) */}
-          <g className="origin-center transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:rotate-[200deg]">
-            <ellipse cx="16" cy="16" rx="13" ry="4.6" fill="none" stroke="white" strokeOpacity="0.9" strokeWidth="1.6" transform="rotate(-28 16 16)" />
-            <circle cx="4.6" cy="22.1" r="2.3" fill="#9ff0ff" />
-          </g>
-        </svg>
-      </span>
-      <span className="font-display text-[25px] font-semibold leading-none tracking-[-0.055em] text-ink lg:text-[1.5cqw]">
-        eun
-        <span className="ml-[0.04em] inline-block size-[0.2em] rounded-full bg-brand align-baseline transition-transform duration-500 group-hover:scale-125" />
-      </span>
+    <a href="#" aria-label="eun 홈" className="flex items-center">
+      {/* 흰 배경 PNG라 multiply로 배경에 녹임 */}
+      <img
+        src={`${import.meta.env.BASE_URL}assets/logo-eun.png`}
+        alt="eun"
+        draggable={false}
+        className="-ml-1 h-7 w-auto select-none mix-blend-multiply night:invert night:mix-blend-screen lg:-ml-[0.18cqw] lg:h-[1.6cqw]"
+      />
     </a>
   );
 }
 
-function Header() {
+function Header({ night, onToggleNight }) {
   const [active, setActive] = useState("Portfolio");
   return (
-    <header className="relative z-20 flex items-center justify-between px-6 pt-6 lg:px-[3.6cqw] lg:pt-[1.3cqw]">
+    <header className="relative z-20 flex items-center justify-between px-6 pt-6 lg:px-[4.8cqw] lg:pt-[1.3cqw]">
       <Logo />
 
+      {/* 대메뉴 임시 숨김
       <nav className="hidden items-center gap-[1.2cqw] md:flex lg:absolute lg:left-[18.3cqw]">
         {NAV.map((item) => {
           const on = item === active;
@@ -544,35 +501,63 @@ function Header() {
           );
         })}
       </nav>
+      */}
 
+      <div className="flex items-center gap-2 lg:gap-[0.5cqw]">
+      <a
+        href={`mailto:${EMAIL}`}
+        aria-label={`이메일 보내기 (${EMAIL})`}
+        title={EMAIL}
+        className="glass grid size-10 place-items-center rounded-full text-ink transition-transform hover:scale-105 active:scale-95 lg:size-[2.3cqw]"
+      >
+        <Mail className="size-[45%]" />
+      </a>
+      <button
+        type="button"
+        onClick={onToggleNight}
+        aria-label={night ? "낮 테마로 전환" : "밤 테마로 전환"}
+        aria-pressed={night}
+        className="glass grid size-10 place-items-center rounded-full text-ink transition-transform hover:scale-105 active:scale-95 lg:size-[2.3cqw]"
+      >
+        {night ? <Sun className="size-[45%]" /> : <Moon className="size-[45%]" />}
+      </button>
+      </div>
     </header>
   );
 }
 
+// 메인 등장 연출 공통 이징/아이템
+const EASE_OUT = [0.22, 1, 0.36, 1];
+const RISE = {
+  hidden: { opacity: 0, y: 28 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: EASE_OUT } },
+};
+
 function Hero() {
+  const loaded = useLoaded();
   return (
     <section className="relative z-10 px-6 pt-14 lg:px-[4.8cqw] lg:pt-[3.6cqw]">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+        initial="hidden"
+        animate={loaded ? "show" : "hidden"}
+        variants={{ show: { transition: { staggerChildren: 0.09, delayChildren: 0.2 } } }}
       >
-        <p className="text-[11px] font-medium tracking-[0.32em] text-ink-soft lg:text-[0.62cqw]">
+        <motion.p variants={RISE} className="text-[11px] font-medium tracking-[0.32em] text-ink-soft lg:text-[0.7cqw]">
           UI / UX DESIGNER
-        </p>
-        <h1 className="mt-4 font-display text-[56px] font-semibold leading-[0.98] tracking-[-0.035em] text-ink sm:text-[72px] lg:mt-[1cqw] lg:text-[4.35cqw]">
+        </motion.p>
+        <motion.h1 variants={RISE} className="mt-4 font-display text-[56px] font-semibold leading-[0.98] tracking-[-0.035em] text-ink sm:text-[72px] lg:mt-[1cqw] lg:text-[4.9cqw]">
           Clarity
           <br />
-          <span className="bg-gradient-to-r from-[#2f63ff] via-[#2447ff] to-[#2a2fe8] bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-[#2f63ff] via-[#2447ff] to-[#2a2fe8] bg-clip-text night:from-[#9db4ff] night:via-[#6f8bff] night:to-[#a08cff] text-transparent">
             Over Complexity
           </span>
-        </h1>
-        <p className="mt-6 text-[20px] font-medium tracking-[-0.02em] text-ink lg:mt-[1.1cqw] lg:text-[1.3cqw]">
+        </motion.h1>
+        <motion.p variants={RISE} className="mt-6 text-[20px] font-medium tracking-[-0.02em] text-ink lg:mt-[1.1cqw] lg:text-[1.45cqw]">
           복잡한 기술도, 더 명확한 경험으로.
-        </p>
-        <p className="mt-2 text-[14px] text-ink-soft lg:mt-[0.5cqw] lg:text-[0.88cqw]">
+        </motion.p>
+        <motion.p variants={RISE} className="mt-1 text-[14px] text-ink-soft lg:mt-[0.2cqw] lg:text-[1cqw]">
           사용자와 기술을 연결하는 디자이너
-        </p>
+        </motion.p>
 
         {/* <a
           href="#projects"
@@ -589,11 +574,11 @@ function Hero() {
 function ProjectThumb({ src, dark }) {
   return (
     <div
-      className="absolute bottom-0 right-0 h-[88%] w-[46%] overflow-hidden rounded-tl-[0.7cqw] border-l border-t border-white/80 shadow-[-10px_-6px_24px_-12px_rgba(30,50,140,0.35)] transition-transform duration-500 group-hover:scale-[1.04]"
+      className="absolute bottom-0 right-0 h-[88%] w-[46%] lg:w-[52%] overflow-hidden rounded-tl-[0.7cqw] border-l border-t border-white/80 shadow-[-10px_-6px_24px_-12px_rgba(30,50,140,0.35)] transition-transform duration-500 group-hover:scale-[1.04]"
       style={{ transformOrigin: "bottom right" }}
     >
       {src ? (
-        <img src={src} alt="" className="h-full w-full object-cover object-left-top" loading="lazy" />
+        <img src={src} alt="" className="h-full w-full object-cover object-left-top night:brightness-[0.88]" loading="lazy" />
       ) : (
         // 썸네일 placeholder
         <div className="relative h-full w-full bg-gradient-to-br from-[#eef3ff] via-[#d7e2ff] to-[#b9ccff]">
@@ -623,9 +608,9 @@ function ProjectCard({ p }) {
       }}
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className="glass group relative block h-[220px] w-[320px] shrink-0 snap-start overflow-hidden rounded-[18px] lg:h-[11.2cqw] lg:w-[21.45cqw] lg:rounded-[1.1cqw]"
+      className="glass group relative block h-[220px] w-[320px] shrink-0 snap-start overflow-hidden rounded-[18px] lg:h-[12.5cqw] lg:w-[24cqw] lg:rounded-[1.1cqw]"
     >
-      <div className="relative z-10 flex h-full w-[56%] flex-col p-5 lg:p-[1.1cqw]">
+      <div className="relative z-10 flex h-full w-[56%] flex-col lg:w-[50%] p-5 lg:p-[1.1cqw]">
         <p className="flex items-center gap-3 text-[11px] font-medium text-ink lg:gap-[0.9cqw] lg:text-[0.68cqw]">
           <span>{p.no}</span>
           <span className="text-ink-soft">{p.cat}</span>
@@ -633,7 +618,7 @@ function ProjectCard({ p }) {
         <h3 className="mt-4 whitespace-pre-line text-[16px] font-bold leading-[1.3] tracking-[-0.03em] text-ink lg:mt-[1.05cqw] lg:text-[0.98cqw]">
           {p.title}
         </h3>
-        <p className="mt-3 whitespace-pre-line text-[12px] leading-[1.6] text-ink-soft lg:mt-[0.75cqw] lg:text-[0.72cqw]">
+        <p className="mt-3 whitespace-pre-line text-[12px] leading-[1.4] text-ink-soft lg:mt-[0.75cqw] lg:text-[0.72cqw]">
           {p.desc}
         </p>
         <span className="mt-auto inline-flex items-center gap-1.5 text-[12px] font-semibold text-ink transition-colors group-hover:text-brand lg:text-[0.74cqw]">
@@ -687,7 +672,7 @@ function FeaturedProjects() {
             <span className="h-px w-8 bg-ink/70 lg:w-[1.7cqw]" />
             Featured Projects
           </p>
-          <h2 className="mt-3 text-[22px] font-bold leading-[1.3] tracking-[-0.03em] text-ink lg:mt-[0.9cqw] lg:text-[1.38cqw]">
+          <h2 className="mt-2 text-[22px] font-bold leading-[1.3] tracking-[-0.03em] text-ink lg:mt-[0.4cqw] lg:text-[1.38cqw]">
             다양한 경험이 만드는 더 나은 사용자 경험
           </h2>
         </div>
@@ -731,32 +716,46 @@ function FeaturedProjects() {
 }
 
 function Footer() {
+  const [copied, setCopied] = useState(false);
+  // 웹메일(네이버 등) 사용자는 mailto가 안 열리는 경우가 많아 복사 버튼 제공
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {}
+  };
   return (
     <footer className="relative z-10 mt-6 flex flex-wrap items-center justify-between gap-4 px-6 pb-6 lg:mt-[1cqw] lg:flex-nowrap lg:px-[4.8cqw] lg:pb-[1.8cqw]">
+      <div className="flex flex-wrap items-center gap-4 lg:gap-[1.2cqw]">
       <div className="flex items-center gap-3 text-[13px] font-medium text-ink lg:gap-[0.6cqw] lg:text-[0.76cqw]">
         <Circle className="size-4 text-brand lg:size-[0.95cqw]" strokeWidth={2} />
-        Design Tools &amp; Skills
-        <span className="ml-3 hidden h-px w-[4.6cqw] bg-ink/20 lg:block" />
+        Contact
+        <span className="ml-3 hidden h-px w-[2.4cqw] bg-ink/20 lg:block" />
       </div>
 
-      <div className="glass flex items-center rounded-full px-4 py-2.5 lg:px-[2.2cqw] lg:py-[0.95cqw]">
-        {TOOLS.map((t, i) => (
-          <div key={t.key} className="flex items-center">
-            {i > 0 && <span className="mx-3 h-4 w-px bg-ink/15 lg:mx-[1.6cqw] lg:h-[1cqw]" />}
-            <div className="group flex items-center gap-2 lg:gap-[0.8cqw]">
-              <span className="transition-transform group-hover:-translate-y-0.5">
-                <SizedTool k={t.key} size={22} />
-              </span>
-              <span className="hidden text-[0.76cqw] text-ink sm:inline">{t.name}</span>
-            </div>
-          </div>
-        ))}
+      <div className="glass flex items-center rounded-full py-1.5 pl-5 pr-1.5 lg:py-[0.35cqw] lg:pl-[1.6cqw] lg:pr-[0.35cqw]">
+        <a
+          href={`mailto:${EMAIL}`}
+          className="flex items-center gap-2 text-[13px] font-medium text-ink transition-colors hover:text-brand lg:gap-[0.6cqw] lg:text-[0.82cqw]"
+        >
+          <Mail className="size-4 text-brand lg:size-[1cqw]" />
+          {EMAIL}
+        </a>
+        <span className="mx-3 h-4 w-px bg-ink/15 lg:mx-[1cqw] lg:h-[1cqw]" />
+        <button
+          type="button"
+          onClick={copy}
+          aria-label="이메일 주소 복사"
+          className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-semibold text-ink transition-colors hover:bg-white/40 lg:gap-[0.4cqw] lg:px-[0.9cqw] lg:py-[0.55cqw] lg:text-[0.72cqw]"
+        >
+          {copied ? <Check className="size-3.5 text-brand lg:size-[0.85cqw]" /> : <Copy className="size-3.5 lg:size-[0.85cqw]" />}
+          <span aria-live="polite">{copied ? "복사됨" : "복사"}</span>
+        </button>
+      </div>
       </div>
 
-      <p className="flex items-center gap-2 text-[12px] text-ink-soft lg:text-[0.68cqw]">
-        Designing a better tomorrow.
-        <Sparkle className="size-4 fill-brand text-brand lg:size-[0.95cqw]" />
-      </p>
+      <p className="text-[12px] text-ink-soft lg:text-[0.68cqw]">© 2026 EUNJI NAM. All Rights Reserved.</p>
     </footer>
   );
 }
@@ -802,9 +801,11 @@ function useMouse() {
   return { x, y, px, py };
 }
 
-function Stage({ mouse }) {
+function Stage({ mouse, night }) {
   const interaction = useRef({ hover: false, spinT: -1 });
   const [hover, setHover] = useState(false);
+  const reduce = useReducedMotion();
+  const loaded = useLoaded();
 
   // 레이어별 깊이: 배경은 반대로 조금, 앞쪽일수록 많이 움직임
   const bgX = useTransform(mouse.x, (v) => v * -22);
@@ -830,21 +831,40 @@ function Stage({ mouse }) {
         }}
       >
         {/* 배경: 살짝 확대해 두고 마우스 반대 방향으로 이동 (가장자리 노출 방지) */}
-        <motion.img
-          src={`${import.meta.env.BASE_URL}assets/bg.png`}
-          alt=""
-          className="absolute inset-0 h-full w-full scale-[1.06] object-cover"
-          style={{ x: bgX, y: bgY }}
-        />
+        {/* 등장: 로더와 같은 색에서 살짝 줌아웃하며 드러남 */}
+        <motion.div
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.08 }}
+          animate={loaded ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.08 }}
+          transition={{ duration: 1.4, ease: EASE_OUT }}
+        >
+          <motion.img
+            src={`${import.meta.env.BASE_URL}assets/bg.png`}
+            alt=""
+            className="absolute inset-0 h-full w-full scale-[1.06] object-cover"
+            style={{ x: bgX, y: bgY }}
+          />
+          {/* 밤 배경: 위에 겹쳐 크로스페이드 */}
+          <motion.img
+            src={`${import.meta.env.BASE_URL}assets/bg-night.png`}
+            alt=""
+            // 밤 이미지는 더 가로로 길어서(1.95:1) 받침대가 오른쪽에 그려짐 → 크롭 위치로 낮 배경에 맞춤
+            className="absolute inset-0 h-full w-full scale-[1.06] object-cover object-[70.4%_50%]"
+            style={{ x: bgX, y: bgY }}
+            initial={false}
+            animate={{ opacity: night ? 1 : 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+          />
+        </motion.div>
 
         {/* 3D 유리 버블 */}
         <div className="absolute inset-0 hidden md:block">
           <BubbleScene />
         </div>
 
-        {/* 3D 우주인: 받침대 상판(약 x 59%, y 44%) 위에 앉도록 배치. 클릭하면 회전 점프 */}
+        {/* 3D 우주인: 받침대 상판(약 x 71%, y 42%) 위에 앉도록 배치. 클릭하면 회전 점프 */}
         <motion.div
-          className="pointer-events-auto absolute left-[58.9%] top-[12%] hidden h-[34%] w-[26%] -translate-x-1/2 cursor-pointer md:block"
+          className="pointer-events-auto absolute left-[71.1%] top-[6.7%] hidden h-[40%] w-[23%] -translate-x-1/2 cursor-pointer md:block"
           style={{ x: astroX, y: astroY }}
           onPointerEnter={() => {
             interaction.current.hover = true;
@@ -858,25 +878,44 @@ function Stage({ mouse }) {
             if (interaction.current.spinT < 0) interaction.current.spinT = 0;
           }}
         >
-          <AstronautScene interaction={interaction} mouse={mouse} />
+          {/* 등장: 아래에서 통통 튀어 올라 받침대에 안착. scale 금지: 3D 캔버스가 축소된 크기로 측정됨 */}
+          <motion.div
+            className="h-full w-full"
+            initial={{ opacity: 0, y: 80 }}
+            animate={loaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 80 }}
+            transition={{ type: "spring", stiffness: 140, damping: 14, delay: 0.35 }}
+          >
+            <AstronautScene interaction={interaction} mouse={mouse} />
+          </motion.div>
           <motion.span
             initial={false}
             animate={{ opacity: hover ? 1 : 0, y: hover ? 0 : 6 }}
-            className="glass pointer-events-none absolute left-[74%] top-[30%] whitespace-nowrap rounded-full px-[0.7cqw] py-[0.3cqw] text-[0.7cqw] font-medium text-ink"
+            className="glass pointer-events-none absolute left-[74%] top-[47.5%] whitespace-nowrap rounded-full px-[0.7cqw] py-[0.3cqw] text-[0.7cqw] font-medium text-ink"
           >
             Click me!
           </motion.span>
         </motion.div>
 
+
         {/* 유리 아이콘 타일 (depth가 클수록 앞쪽 = 많이 움직임) */}
         <div className="hidden md:block">
-          <GlassTile mouse={mouse} k="ps" className="left-[40.5%] top-[11%] w-[7.6%]" rotate={-10} delay={0.1} depth={1.2} />
-          <GlassTile mouse={mouse} k="figma" className="left-[53.5%] top-[2.5%] w-[8.6%]" rotate={-4} delay={0.25} depth={0.7} />
-          <GlassTile mouse={mouse} k="ai" className="left-[69.5%] top-[9%] w-[6.8%]" rotate={10} delay={0.4} depth={0.9} />
-          <GlassTile mouse={mouse} k="gpt" className="left-[44%] top-[30%] w-[7.2%]" rotate={-8} delay={0.55} depth={1.6} />
-          <GlassTile mouse={mouse} k="claude" className="left-[71%] top-[32%] w-[7.4%]" rotate={8} delay={0.7} depth={1.4} />
+          <GlassTile mouse={mouse} k="ps" className="left-[55.4%] top-[14.7%] w-[6.5%]" rotate={-10} delay={0.1} depth={1.2} />
+          <GlassTile mouse={mouse} k="figma" className="left-[64.6%] top-[4%] w-[7.3%]" rotate={-4} delay={0.25} depth={0.7} />
+          <GlassTile mouse={mouse} k="ai" className="left-[77.3%] top-[10.7%] w-[5.8%]" rotate={10} delay={0.4} depth={0.9} />
+          <GlassTile mouse={mouse} k="gpt" className="left-[57.6%] top-[32.7%] w-[6.2%]" rotate={-8} delay={0.55} depth={1.6} />
+          <GlassTile mouse={mouse} k="claude" className="left-[78%] top-[33.7%] w-[6.3%]" rotate={8} delay={0.7} depth={1.4} />
         </div>
       </motion.div>
+
+      {/* 모바일: 3D 대신 가벼운 정적 우주인 이미지 */}
+      <motion.img
+        src={`${import.meta.env.BASE_URL}assets/loader-astronaut.png`}
+        alt=""
+        draggable={false}
+        className="absolute right-6 top-20 w-[88px] select-none drop-shadow-[0_14px_18px_rgba(36,71,255,0.22)] md:hidden"
+        animate={reduce ? undefined : { y: [0, -8, 0], rotate: [-3, 3, -3] }}
+        transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
+      />
 
       {/* 커서 조명 */}
       <motion.div className="absolute inset-0 mix-blend-soft-light" style={{ background: glow }} />
@@ -942,6 +981,7 @@ export default function App() {
   const hasDetail = !!(slug && PROJECT_DETAILS[slug]);
 
   return (
+    <MotionConfig reducedMotion="user">
     <NavCtx.Provider value={{ open, paused: hasDetail && settled }}>
       <div inert={hasDetail ? true : undefined}>
         <Home mouse={mouse} />
@@ -959,26 +999,50 @@ export default function App() {
         )}
       </AnimatePresence>
     </NavCtx.Provider>
+    </MotionConfig>
   );
 }
 
+// 저장된 선택 > 시스템 설정 순. 저장소가 막혀 있어도 동작
+function initialNight() {
+  try {
+    const v = localStorage.getItem("theme");
+    if (v) return v === "night";
+  } catch {}
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+}
+
 function Home({ mouse }) {
+  const loaded = useLoaded();
+  const [night, setNight] = useState(initialNight);
+  const toggleNight = () =>
+    setNight((n) => {
+      try { localStorage.setItem("theme", n ? "day" : "night"); } catch {}
+      return !n;
+    });
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#dfe6fb] [container-type:inline-size] lg:h-screen lg:min-h-[820px] lg:[container-type:size]">
+    <div
+      data-theme={night ? "night" : undefined}
+      className="relative min-h-screen overflow-hidden bg-[#dfe6fb] transition-colors duration-700 night:bg-[#030a26] [container-type:inline-size] lg:h-screen lg:min-h-[820px] lg:[container-type:size]">
       {/* 배경 + 중앙 3D 장면 */}
-      <Stage mouse={mouse} />
+      <Stage mouse={mouse} night={night} />
 
       {/* 가독성을 위한 좌측 은은한 화이트 그라데이션 */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/45 via-white/10 to-transparent night:from-[#030a26]/70 night:via-[#030a26]/20" />
 
       {/* UI 레이어: 빈 영역은 클릭이 뒤쪽 3D 장면(우주인)으로 통과하도록 */}
       <div className="pointer-events-none relative z-10 [&_a]:pointer-events-auto [&_button]:pointer-events-auto flex min-h-screen flex-col lg:h-full lg:min-h-0">
-        <Header />
+        <Header night={night} onToggleNight={toggleNight} />
         <Hero />
-        <div className="lg:mt-auto">
+        <motion.div
+          className="lg:mt-auto"
+          initial={{ opacity: 0, y: 40 }}
+          animate={loaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+          transition={{ duration: 1, ease: EASE_OUT, delay: 0.7 }}
+        >
           <FeaturedProjects />
           <Footer />
-        </div>
+        </motion.div>
       </div>
 
     </div>

@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useProgress } from "@react-three/drei";
 
 const MIN_SHOW_MS = 900; // 너무 빨리 사라져 깜빡이는 것 방지
+
+// 로딩 완료 신호: 메인 화면 등장 연출이 이 시점에 시작됨
+let loaded = false;
+const subs = new Set();
+export const useLoaded = () =>
+  useSyncExternalStore((cb) => (subs.add(cb), () => subs.delete(cb)), () => loaded);
 
 /* 3D 에셋 로딩 진행률을 보여주고, 완료되면 페이드아웃되는 로딩 화면 */
 export default function Loader() {
@@ -25,6 +31,12 @@ export default function Loader() {
     const t = setTimeout(() => setDone(true), 12000);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!done) return;
+    loaded = true;
+    subs.forEach((cb) => cb());
+  }, [done]);
 
   // 로딩 중 스크롤 잠금
   useEffect(() => {
@@ -60,23 +72,23 @@ export default function Loader() {
               src={`${import.meta.env.BASE_URL}assets/loader-astronaut.png`}
               alt=""
               draggable={false}
-              className="w-[72px] select-none drop-shadow-[0_14px_18px_rgba(36,71,255,0.22)]"
+              className="w-[56px] select-none drop-shadow-[0_14px_18px_rgba(36,71,255,0.22)]"
               animate={reduce ? undefined : { y: [0, -10, 0], rotate: [-3, 3, -3] }}
               transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
             />
             {/* 바닥 그림자: 떠오를 때 작아짐 */}
             <motion.span
-              className="mt-3 h-[6px] w-12 rounded-full bg-[#2447ff]/15 blur-[3px]"
+              className="mt-2 h-[6px] w-12 rounded-full bg-[#2447ff]/15 blur-[3px]"
               animate={reduce ? undefined : { scaleX: [1, 0.75, 1], opacity: [0.9, 0.5, 0.9] }}
               transition={{ duration: 3, ease: "easeInOut", repeat: Infinity }}
             />
 
-            <p className="mt-5 text-[15px] font-medium tracking-[-0.02em] text-ink">
+            <p className="mt-3 text-[15px] font-medium tracking-[-0.02em] text-ink">
               조금만 기다려주세요.
             </p>
 
             {/* 진행 바 */}
-            <div className="mt-7 h-[3px] w-40 overflow-hidden rounded-full bg-white/70">
+            <div className="mt-4 h-[3px] w-40 overflow-hidden rounded-full bg-white/70">
               <motion.div
                 className="h-full rounded-full bg-brand"
                 initial={{ width: 0 }}
@@ -84,7 +96,7 @@ export default function Loader() {
                 transition={{ duration: 0.4, ease: "easeOut" }}
               />
             </div>
-            <span className="mt-3 font-display text-[12px] font-medium tabular-nums tracking-[0.2em] text-ink-soft">
+            <span className="mt-2 font-display text-[12px] font-medium tabular-nums tracking-[0.2em] text-ink-soft">
               {String(pct).padStart(3, "0")}%
             </span>
           </motion.div>

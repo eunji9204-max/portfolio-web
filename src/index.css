@@ -9,6 +9,15 @@
   --color-brand-deep: #1631e0;
 }
 
+/* 밤 테마: 메인(Home)에만 data-theme="night"로 적용 */
+@custom-variant night (&:where([data-theme=night], [data-theme=night] *));
+
+[data-theme="night"] {
+  --color-ink: #eef2ff;
+  --color-ink-soft: #a9b4e0;
+  --color-brand: #7d95ff;
+}
+
 html, body, #root { height: 100%; }
 body {
   margin: 0;
@@ -33,4 +42,13 @@ body {
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
+}
+
+/* 밤 테마 글래스: 어두운 배경 위에서 은은하게 */
+[data-theme="night"] .glass {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.04));
+  border-color: rgb(255 255 255 / 0.18);
+  box-shadow:
+    0 10px 30px -12px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 255 255 / 0.22);
 }
